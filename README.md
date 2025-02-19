@@ -1,8 +1,8 @@
-# tools
+# unpacked.dev Toolbox
 Just some handy tools 🔨 to make your life easier
 
 ## Filetree generator
-Generate n [directory/filetree](https://unpacked-dev.github.io/tools/filetree/index.html) for your markdown files like this example:<br>
+Generate a [directory/filetree](https://unpacked-dev.github.io/tools/filetree/index.html) for your markdown files like this example:<br>
 
 ```
 tools/
