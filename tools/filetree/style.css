@@ -1,0 +1,180 @@
+/* 
+*********** START OTTR WEBENGINE CSS ***********
+*/
+:root {
+
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0px;
+    min-height: 100vh;
+    font-family: var(--ft-sans);
+}
+
+/* TEXTS */
+h1,
+h2,
+h3,
+h4,
+h5,
+p {
+    margin: 0px 0px 25px 0px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+    display: flex;
+    align-items: center;
+}
+
+/* INPUT */
+input {
+    border: transparent;
+    box-shadow: none;
+}
+
+/* BUTTONS */
+button {
+    border: none;
+    cursor: pointer;
+}
+
+/* IMAGES */
+img {
+    max-height: 100%;
+    pointer-events: none;
+    user-select: none;
+    object-fit: contain;
+}
+
+/* GRID */
+.ottr-row {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+}
+
+.ottr-row.reverse {
+    flex-direction: row-reverse;
+}
+
+.ottr-col {
+    flex-direction: column;
+}
+
+.ottr-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.ottr-col.reverse {
+    flex-direction: column-reverse;
+}
+
+.no-wrap {
+    flex-wrap: nowrap;
+}
+
+/* POINTERS */
+.hover-pointer:hover {
+    cursor: pointer;
+}
+
+.hover-disabled:hover {
+    cursor: not-allowed;
+}
+
+.no-pointer:hover {
+    pointer-events: none;
+}
+
+/* DISPLAY */
+.hidden {
+    display: none;
+}
+
+/* BUTTONS */
+.ottr-btn {
+    padding: 15px 30px;
+    border-radius: 5px;
+    font-family: var(--ft-sans);
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.ottr-btn.inverted {
+    color: white;
+    background-color: black;
+}
+
+/* CODE */
+.ottr-code.code-copy:hover {
+    cursor: pointer;
+}
+
+.ottr-code {
+    border: 1px solid #e4e4e4;
+    padding: 0px 10px;
+    font-family: var(--ft-mono);
+}
+
+/*
+*********** END OTTR WEBENGINE CSS ***********
+*/
+
+/* VARIABLES */
+:root {
+    --ft-sans: "Roboto";
+    --ft-mono: "Roboto Mono";
+    --page-container: 50px;
+}
+
+
+.page {
+    display: none;
+    padding: var(--page-container);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+    margin-bottom: 25px;
+}
+
+footer {
+    height: 50px;
+    border-top: 1px solid #d1d9e0;
+    display: flex;
+    align-items: center;
+    margin: 0px var(--page-container);
+    position: fixed;
+    bottom: 0px;
+    width: calc(100% - 2* var(--page-container));
+    background-color: white;
+}
+
+footer img {
+    padding: 10px;
+}
+
+.footer-text-elem {
+    font-size: 12px;
+    color: #59636e;
+}
+
+.result-container {
+    display: none;
+}
+
+.directory-action-container {
+    margin-bottom: 25px;
+}

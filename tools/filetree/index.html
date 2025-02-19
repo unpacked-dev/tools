@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Directory 🌳 Builder</title>
+        <link rel="stylesheet" href="style.css">
+        <script src="script.js"></script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <header>
+            
+        </header>
+        <main class="page page-main ottr-col">
+            <h1>Directory tree builder</h1>
+            <p>
+                Select your folder using your browsers file api and automatically create an awesome filetree! <br>
+                Don't worry, your browser does all the magic 🪄 Your files will not be uploaded.
+            </p>
+            <div class="ottr-row directory-action-container">
+                <button class="ottr-btn inverted btn-directory-pick" onclick="onPickDirectory();">Generate filetree 🌳</button>
+            </div>
+            <div class="ottr-col result-container">
+                <h2>Here is your filetree 🤯</h2>
+                <p>
+                    You can copy the filetree with one click! <br>
+                    Want more? Just generate a new one!
+                </p>
+                <div class="ottr-code code-copy directory-tree-code"></div>
+            </div>
+        </main>
+        <main class="page page-unsupportedBrowser ottr-col">
+            <h1>Oh noooo</h1>
+            <p>
+                Your browser doesn't support the file api (yet). <br>
+                Try again using a Chromium based browser like Google Chrome.
+            </p>
+        </main>
+        <footer>
+            <img src="./assets/img/unpacked-logo.png" />
+            <span class="footer-text-elem">© unpacked.dev</span>
+        </footer>
+    </body>
+</html>
