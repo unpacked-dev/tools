@@ -16,3 +16,7 @@ tools/
   │ └ style.css
   └ ... /
 ```
+
+## CopyClock
+Sometimes you just need a timestamp. With [CopyClock](https://unpacked-dev.github.io/tools/copyclock/index.html) you can copy the current timestamp with one click!
+Or just watch it because its satisfying :)

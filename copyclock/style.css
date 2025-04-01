@@ -1,0 +1,15 @@
+body {
+    font-family: monospace;
+    font-size: 7.5rem;
+    background-color: #030311;
+    color: #FEF9FF;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0px;
+}
+
+#clock {
+    cursor: pointer;
+}
