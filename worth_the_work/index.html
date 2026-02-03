@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>worth_the_work</title>
+	<style>
+		:root {
+			--bg: #0b1020;
+			--text: rgba(255, 255, 255, .92);
+			--muted: rgba(255, 255, 255, .68);
+			--border: rgba(255, 255, 255, .14);
+			--shadow: 0 18px 60px rgba(0, 0, 0, .45);
+			--radius: 18px;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		html,
+		body {
+			height: 100%;
+		}
+
+		body {
+			margin: 0;
+			font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+			background:
+				radial-gradient(1200px 700px at 20% 10%, rgba(124, 92, 255, .35), transparent 60%),
+				radial-gradient(1000px 700px at 90% 30%, rgba(34, 211, 238, .22), transparent 55%),
+				radial-gradient(900px 700px at 50% 100%, rgba(255, 77, 109, .16), transparent 60%),
+				var(--bg);
+			color: var(--text);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 18px;
+		}
+
+		.wrap {
+			width: min(520px, 100%);
+		}
+
+		.card {
+			position: relative;
+			background: linear-gradient(180deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, .06));
+			border: 1px solid var(--border);
+			border-radius: var(--radius);
+			box-shadow: var(--shadow);
+			overflow: hidden;
+		}
+
+		/* Watermark / Floating Brand */
+		.watermark {
+			position: absolute;
+			inset: 0;
+			pointer-events: none;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			z-index: 0;
+			transform: translateY(-6px);
+		}
+
+		.watermark span {
+			font-size: 44px;
+			font-weight: 800;
+			letter-spacing: 3px;
+			text-transform: lowercase;
+			color: rgba(255, 255, 255, .06);
+			white-space: nowrap;
+			transform: rotate(-14deg);
+			filter: blur(.0px);
+		}
+
+		/* extra subtle glow */
+		.watermark span::after {
+			content: attr(data-text);
+			position: absolute;
+			inset: 0;
+			color: rgba(124, 92, 255, .08);
+			transform: translate(6px, 6px);
+			z-index: -1;
+		}
+
+		/* Make sure content is above watermark */
+		header,
+		.content {
+			position: relative;
+			z-index: 1;
+		}
+
+		header {
+			padding: 20px 18px 10px 18px;
+			display: flex;
+			gap: 14px;
+			align-items: center;
+		}
+
+		.logo {
+			width: 46px;
+			height: 46px;
+			border-radius: 14px;
+			background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, .22), rgba(255, 255, 255, .08));
+			border: 1px solid rgba(255, 255, 255, .16);
+			display: grid;
+			place-items: center;
+			flex: 0 0 auto;
+		}
+
+		.logo svg {
+			width: 28px;
+			height: 28px;
+			opacity: .95;
+		}
+
+		h1 {
+			font-size: 18px;
+			line-height: 1.15;
+			margin: 0;
+			letter-spacing: .2px;
+		}
+
+		.subtitle {
+			margin-top: 4px;
+			font-size: 13px;
+			color: var(--muted);
+		}
+
+		/* Small brand label (also visible, but subtle) */
+		.brand {
+			position: relative;
+			z-index: 1;
+			text-align: center;
+			font-size: 12px;
+			letter-spacing: 2px;
+			text-transform: lowercase;
+			color: rgba(255, 255, 255, .45);
+			margin: 6px 0 2px 0;
+			font-weight: 600;
+		}
+
+		.content {
+			padding: 8px 18px 18px 18px;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+
+		.field {
+			background: rgba(255, 255, 255, .06);
+			border: 1px solid rgba(255, 255, 255, .12);
+			border-radius: 16px;
+			padding: 12px 12px;
+			backdrop-filter: blur(6px);
+		}
+
+		label {
+			display: flex;
+			justify-content: space-between;
+			align-items: baseline;
+			gap: 10px;
+			font-size: 12px;
+			color: var(--muted);
+			margin-bottom: 8px;
+		}
+
+		.hint {
+			font-size: 11px;
+			opacity: .9;
+		}
+
+		.inputRow {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		input {
+			width: 100%;
+			font-size: 16px;
+			color: var(--text);
+			background: transparent;
+			border: none;
+			outline: none;
+			padding: 4px 0;
+			-webkit-appearance: none;
+			appearance: none;
+		}
+
+		input::placeholder {
+			color: rgba(255, 255, 255, .35);
+		}
+
+		.pill {
+			font-size: 12px;
+			padding: 6px 10px;
+			border-radius: 999px;
+			border: 1px solid rgba(255, 255, 255, .14);
+			background: rgba(0, 0, 0, .20);
+			color: rgba(255, 255, 255, .8);
+			white-space: nowrap;
+		}
+
+		.result {
+			margin-top: 4px;
+			padding: 14px 14px;
+			border-radius: 16px;
+			border: 1px solid rgba(255, 255, 255, .14);
+			background: linear-gradient(135deg, rgba(124, 92, 255, .18), rgba(34, 211, 238, .10));
+			backdrop-filter: blur(6px);
+		}
+
+		.resultTop {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.resultTitle {
+			font-size: 12px;
+			color: rgba(255, 255, 255, .72);
+			margin: 0;
+		}
+
+		.badge {
+			font-size: 12px;
+			padding: 6px 10px;
+			border-radius: 999px;
+			border: 1px solid rgba(255, 255, 255, .18);
+			background: rgba(255, 255, 255, .06);
+			color: rgba(255, 255, 255, .85);
+		}
+
+		.big {
+			font-size: 28px;
+			font-weight: 750;
+			letter-spacing: .2px;
+			margin: 8px 0 0 0;
+		}
+
+		.small {
+			margin: 6px 0 0 0;
+			color: rgba(255, 255, 255, .72);
+			font-size: 13px;
+			line-height: 1.35;
+		}
+
+		.error {
+			color: rgba(255, 255, 255, .92);
+			background: rgba(255, 77, 109, .14);
+			border-color: rgba(255, 77, 109, .35);
+		}
+
+		@media (max-width: 420px) {
+			.watermark span {
+				font-size: 38px;
+			}
+		}
+
+		@media (max-width: 360px) {
+			.big {
+				font-size: 24px;
+			}
+
+			.watermark span {
+				font-size: 34px;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<div class="wrap">
+		<div class="card">
+			<!-- Watermark background -->
+			<div class="watermark" aria-hidden="true">
+				<span data-text="worth_the_work">worth_the_work</span>
+			</div>
+
+			<header>
+				<div class="logo" aria-hidden="true">
+					<!-- Uhr-Icon (SVG) -->
+					<svg viewBox="0 0 24 24" fill="none">
+						<path d="M12 22a10 10 0 1 0-10-10 10 10 0 0 0 10 10Z" stroke="white" stroke-width="1.8"
+							opacity="0.95" />
+						<path d="M12 6.5v6l4 2" stroke="white" stroke-width="1.8" stroke-linecap="round"
+							stroke-linejoin="round" opacity="0.95" />
+						<path d="M7 3.8 5.6 2.4" stroke="white" stroke-width="1.8" stroke-linecap="round"
+							opacity="0.7" />
+						<path d="M17 3.8 18.4 2.4" stroke="white" stroke-width="1.8" stroke-linecap="round"
+							opacity="0.7" />
+					</svg>
+				</div>
+				<div>
+					<h1>Wie lange musst du dafür arbeiten?</h1>
+					<div class="subtitle">Preis → Arbeitszeit (netto, pro Monat)</div>
+				</div>
+			</header>
+
+			<div class="content">
+				<div class="field">
+					<label for="hoursMonth">
+            <span>Stunden pro Monat</span>
+            <span class="hint">z.B. 160</span>
+          </label>
+					<div class="inputRow">
+						<input id="hoursMonth" inputmode="decimal" placeholder="160" />
+						<span class="pill">h/Monat</span>
+					</div>
+				</div>
+
+				<div class="field">
+					<label for="netMonth">
+            <span>Nettolohn pro Monat</span>
+            <span class="hint">z.B. 2500</span>
+          </label>
+					<div class="inputRow">
+						<input id="netMonth" inputmode="decimal" placeholder="2500" />
+						<span class="pill">€ netto</span>
+					</div>
+				</div>
+
+				<div class="field">
+					<label for="price">
+            <span>Preis vom Artikel</span>
+            <span class="hint">z.B. 199,99</span>
+          </label>
+					<div class="inputRow">
+						<input id="price" inputmode="decimal" placeholder="199,99" />
+						<span class="pill">€</span>
+					</div>
+				</div>
+
+				<div id="result" class="result" role="status" aria-live="polite">
+					<div class="resultTop">
+						<p class="resultTitle">Ergebnis</p>
+						<span id="hourlyBadge" class="badge">— €/h</span>
+					</div>
+					<p id="big" class="big">Gib Werte ein 👆</p>
+					<p id="small" class="small">Kommas und Punkte sind okay.</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		const $ = (id) => document.getElementById(id);
+
+    const hoursMonth = $("hoursMonth");
+    const netMonth   = $("netMonth");
+    const price      = $("price");
+
+    const resultBox   = $("result");
+    const big         = $("big");
+    const small       = $("small");
+    const hourlyBadge = $("hourlyBadge");
+
+    // LocalStorage Keys
+    const LS_HOURS = "worktime_hours_per_month";
+    const LS_NET   = "worktime_net_per_month";
+
+    // Akzeptiert "1.234,56" / "1234,56" / "1234.56"
+    function parseNumber(str){
+      if(!str) return NaN;
+      str = String(str).trim();
+      str = str.replace(/[^\d.,-]/g, "");
+
+      const lastDot = str.lastIndexOf(".");
+      const lastCom = str.lastIndexOf(",");
+      if (lastDot !== -1 && lastCom !== -1){
+        const decIsComma = lastCom > lastDot;
+        str = str.replace(decIsComma ? /\./g : /,/g, "");
+        str = str.replace(decIsComma ? /,/ : /\./, ".");
+      } else {
+        str = str.replace(",", ".");
+      }
+
+      const n = Number(str);
+      return Number.isFinite(n) ? n : NaN;
+    }
+
+    function fmtEuro(n){
+      return new Intl.NumberFormat("de-DE", { style:"currency", currency:"EUR" }).format(n);
+    }
+    function fmtNum(n){
+      return new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 }).format(n);
+    }
+
+    function setError(msg){
+      resultBox.classList.add("error");
+      big.textContent = msg;
+      small.textContent = "Bitte prüf die Eingaben (alle > 0).";
+      hourlyBadge.textContent = "— €/h";
+    }
+
+    function setNormal(){
+      resultBox.classList.remove("error");
+    }
+
+    function loadSaved(){
+      const savedHours = localStorage.getItem(LS_HOURS);
+      const savedNet   = localStorage.getItem(LS_NET);
+
+      if (savedHours !== null) hoursMonth.value = savedHours;
+      if (savedNet   !== null) netMonth.value   = savedNet;
+    }
+
+    function saveHoursIfValid(){
+      const v = parseNumber(hoursMonth.value);
+      if (v > 0) localStorage.setItem(LS_HOURS, hoursMonth.value.trim());
+    }
+
+    function saveNetIfValid(){
+      const v = parseNumber(netMonth.value);
+      if (v > 0) localStorage.setItem(LS_NET, netMonth.value.trim());
+    }
+
+    function update(){
+      const hMonth = parseNumber(hoursMonth.value);
+      const net    = parseNumber(netMonth.value);
+      const p      = parseNumber(price.value);
+
+      const allEmpty = [hoursMonth.value, netMonth.value, price.value].every(v => !String(v).trim());
+      if(allEmpty){
+        setNormal();
+        big.textContent = "Gib Werte ein 👆";
+        small.textContent = "Kommas und Punkte sind okay.";
+        hourlyBadge.textContent = "— €/h";
+        return;
+      }
+
+      if(!(hMonth > 0) || !(net > 0) || !(p >= 0)){
+        setError("Ups – irgendwas passt nicht.");
+        return;
+      }
+
+      const hourly = net / hMonth;           // €/h
+      const hoursNeeded = p / hourly;        // h
+      const totalMinutes = Math.round(hoursNeeded * 60);
+
+      const outHours = Math.floor(totalMinutes / 60);
+      const outMins  = totalMinutes % 60;
+
+      setNormal();
+      hourlyBadge.textContent = `${fmtNum(hourly)} €/h`;
+
+      if(p === 0){
+        big.textContent = "0 Stunden · 0 Minuten";
+        small.textContent = "Gratis 😄";
+        return;
+      }
+
+      big.textContent = `${outHours} Stunden · ${outMins} Minuten`;
+      small.textContent = `Bei ${fmtNum(hMonth)} h/Monat und ${fmtEuro(net)} netto. Artikel: ${fmtEuro(p)}.`;
+    }
+
+    // Live rechnen
+    ["input","change"].forEach(evt => {
+      hoursMonth.addEventListener(evt, update);
+      netMonth.addEventListener(evt, update);
+      price.addEventListener(evt, update);
+    });
+
+    // Nach der Eingabe speichern (nicht bei jedem Tastenanschlag)
+    hoursMonth.addEventListener("blur", () => { saveHoursIfValid(); update(); });
+    netMonth.addEventListener("blur",   () => { saveNetIfValid();   update(); });
+
+    // Enter = speichern (via blur)
+    function onEnterSave(e){
+      if(e.key === "Enter") e.target.blur();
+    }
+    hoursMonth.addEventListener("keydown", onEnterSave);
+    netMonth.addEventListener("keydown", onEnterSave);
+
+    // Start: gespeicherte Werte reinladen
+    loadSaved();
+    update();
+	</script>
+</body>
+
+</html>

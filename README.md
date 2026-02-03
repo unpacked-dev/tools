@@ -1,6 +1,9 @@
 # unpacked.dev Toolbox
 Just some handy tools 🔨 to make your life easier
 
+## Worth the Work
+A simple [calculator app](https://unpacked-dev.github.io/tools/worth_the_work/index.html) for converting money into work-time.
+
 ## Filetree generator
 Generate a [directory/filetree](https://unpacked-dev.github.io/tools/filetree/index.html) for your markdown files like this example:<br>
 
