@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Local Gists</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- markdown-it + highlight.js via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-subtle: #f6f8fa;
+    --bg-hover: #eaeef2;
+    --border: #d0d7de;
+    --border-muted: #d8dee4;
+    --fg: #1f2328;
+    --fg-muted: #656d76;
+    --accent: #0969da;
+    --accent-hover: #0860c7;
+    --success: #1a7f37;
+    --danger: #cf222e;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: var(--font-sans);
+    color: var(--fg);
+    background: var(--bg);
+    font-size: 14px;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    height: 100vh;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    background: var(--bg-subtle);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sidebar-header h1 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .sidebar-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .modal-backdrop.open { display: flex; }
+
+  .modal {
+    background: var(--bg);
+    border-radius: 8px;
+    width: 520px;
+    max-width: 90vw;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+  }
+
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--fg-muted);
+    line-height: 1;
+    padding: 0 4px;
+  }
+  .modal-close:hover { color: var(--fg); }
+
+  .modal-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-subtle);
+    padding: 0 20px;
+  }
+  .modal-tab {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .modal-tab:hover { color: var(--fg); }
+  .modal-tab.active {
+    color: var(--fg);
+    border-bottom-color: #fd8c73;
+  }
+
+  .modal-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .export-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 8px;
+  }
+  .export-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .export-item:hover { background: var(--bg-subtle); }
+  .export-item input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+  }
+  .export-item-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .export-item-title {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .export-item-meta {
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+
+  .select-all-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-muted);
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: var(--fg-muted);
+    font-weight: 500;
+  }
+
+  .import-drop {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--fg-muted);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .import-drop:hover, .import-drop.drag-over {
+    border-color: var(--accent);
+    background: var(--bg-subtle);
+  }
+  .import-drop input { display: none; }
+
+  .import-preview {
+    margin-top: 16px;
+    font-size: 13px;
+  }
+  .import-preview-count {
+    padding: 10px 12px;
+    background: var(--bg-subtle);
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .radio-group label {
+    display: flex;
+    gap: 8px;
+    cursor: pointer;
+    align-items: flex-start;
+  }
+  .radio-group input {
+    margin-top: 3px;
+  }
+  .radio-group small {
+    color: var(--fg-muted);
+    display: block;
+    margin-top: 2px;
+  }
+
+  .error-msg {
+    color: var(--danger);
+    font-size: 13px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(207, 34, 46, 0.08);
+    border-radius: 6px;
+  }
+
+  .btn {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--fg);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: var(--bg-hover); }
+  .btn-primary {
+    background: #1f883d;
+    border-color: rgba(31, 35, 40, 0.15);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #1a7f37; }
+  .btn-danger {
+    color: var(--danger);
+    border-color: var(--border);
+  }
+  .btn-danger:hover {
+    background: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+  }
+
+  .gist-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  .gist-item {
+    padding: 10px 16px;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-muted);
+  }
+  .gist-item:hover { background: var(--bg-hover); }
+  .gist-item.active {
+    background: var(--bg);
+    border-left-color: var(--accent);
+  }
+  .gist-item-title {
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+  .gist-item-meta {
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+
+  .empty-list {
+    padding: 24px 16px;
+    color: var(--fg-muted);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  /* ---------- Main ---------- */
+  .main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .toolbar {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--bg);
+  }
+
+  .title-input {
+    flex: 1;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--fg);
+  }
+  .title-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3);
+  }
+
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-subtle);
+    padding: 0 20px;
+  }
+  .tab {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--fg); }
+  .tab.active {
+    color: var(--fg);
+    border-bottom-color: #fd8c73;
+  }
+
+  .panels {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .panel {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+    display: none;
+  }
+  .panel.active { display: block; }
+
+  .editor {
+    width: 100%;
+    height: 100%;
+    border: none;
+    resize: none;
+    padding: 20px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--fg);
+    background: var(--bg);
+    outline: none;
+    tab-size: 2;
+  }
+
+  .preview {
+    padding: 24px 32px;
+    max-width: 900px;
+    line-height: 1.6;
+  }
+  .preview h1, .preview h2, .preview h3, .preview h4 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+  .preview h1 { font-size: 2em; border-bottom: 1px solid var(--border-muted); padding-bottom: 0.3em; }
+  .preview h2 { font-size: 1.5em; border-bottom: 1px solid var(--border-muted); padding-bottom: 0.3em; }
+  .preview h3 { font-size: 1.25em; }
+  .preview p { margin: 0 0 16px; }
+  .preview code {
+    padding: 0.2em 0.4em;
+    background: rgba(175, 184, 193, 0.2);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 85%;
+  }
+  .preview pre {
+    background: var(--bg-subtle);
+    padding: 16px;
+    border-radius: 6px;
+    overflow: auto;
+    font-size: 85%;
+    line-height: 1.45;
+  }
+  .preview pre code {
+    padding: 0;
+    background: transparent;
+    font-size: 100%;
+  }
+  .preview blockquote {
+    margin: 0 0 16px;
+    padding: 0 1em;
+    color: var(--fg-muted);
+    border-left: 0.25em solid var(--border);
+  }
+  .preview ul, .preview ol { margin: 0 0 16px; padding-left: 2em; }
+  .preview li { margin-bottom: 4px; }
+  .preview table {
+    border-collapse: collapse;
+    margin-bottom: 16px;
+  }
+  .preview th, .preview td {
+    border: 1px solid var(--border);
+    padding: 6px 13px;
+  }
+  .preview th { background: var(--bg-subtle); }
+  .preview a { color: var(--accent); text-decoration: none; }
+  .preview a:hover { text-decoration: underline; }
+  .preview hr { border: 0; border-top: 1px solid var(--border); margin: 24px 0; }
+  .preview img { max-width: 100%; }
+
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--fg-muted);
+    font-size: 14px;
+    text-align: center;
+    padding: 40px;
+  }
+
+  .status {
+    font-size: 12px;
+    color: var(--fg-muted);
+    margin-left: auto;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>Local Gists</h1>
+      <div class="sidebar-actions">
+        <button class="btn" id="btn-io" title="Import / Export">⇅</button>
+        <button class="btn btn-primary" id="btn-new">+ New</button>
+      </div>
+    </div>
+    <div class="gist-list" id="gist-list"></div>
+  </aside>
+
+  <main class="main" id="main">
+    <!-- wird per JS gerendert -->
+  </main>
+</div>
+
+<!-- Import/Export Modal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Import / Export</h2>
+      <button class="modal-close" id="modal-close">×</button>
+    </div>
+    <div class="modal-tabs">
+      <div class="modal-tab active" data-mtab="export">Export</div>
+      <div class="modal-tab" data-mtab="import">Import</div>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<script>
+  // ---- Storage ----
+  const STORAGE_KEY = 'local-gists-v1';
+  const load = () => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { return []; }
+  };
+  const save = (gists) => localStorage.setItem(STORAGE_KEY, JSON.stringify(gists));
+
+  // ---- Markdown setup ----
+  const md = window.markdownit({
+    html: false,
+    linkify: true,
+    typographer: true,
+    highlight: function (str, lang) {
+      if (lang && hljs.getLanguage(lang)) {
+        try {
+          return '<pre><code class="hljs language-' + lang + '">' +
+                 hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+                 '</code></pre>';
+        } catch (_) {}
+      }
+      return '<pre><code class="hljs">' + md.utils.escapeHtml(str) + '</code></pre>';
+    }
+  });
+
+  // ---- State ----
+  let gists = load();
+  let activeId = gists[0]?.id || null;
+  let currentTab = 'edit'; // 'edit' | 'preview'
+
+  // ---- Helpers ----
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const formatDate = (ts) => {
+    const d = new Date(ts);
+    return d.toLocaleString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+  const getActive = () => gists.find(g => g.id === activeId);
+
+  // ---- Render ----
+  function renderSidebar() {
+    const list = document.getElementById('gist-list');
+    if (gists.length === 0) {
+      list.innerHTML = '<div class="empty-list">No gists yet.<br>Click "+ New".</div>';
+      return;
+    }
+    // neueste zuerst
+    const sorted = [...gists].sort((a, b) => b.updated - a.updated);
+    list.innerHTML = sorted.map(g => `
+      <div class="gist-item ${g.id === activeId ? 'active' : ''}" data-id="${g.id}">
+        <div class="gist-item-title">${escapeHtml(g.title || 'Untitled')}</div>
+        <div class="gist-item-meta">${formatDate(g.updated)}</div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.gist-item').forEach(el => {
+      el.addEventListener('click', () => {
+        activeId = el.dataset.id;
+        currentTab = 'edit';
+        render();
+      });
+    });
+  }
+
+  function renderMain() {
+    const main = document.getElementById('main');
+    const gist = getActive();
+
+    if (!gist) {
+      main.innerHTML = `
+        <div class="empty-state">
+          Select a gist or create a new one.
+        </div>
+      `;
+      return;
+    }
+
+    main.innerHTML = `
+      <div class="toolbar">
+        <input type="text" class="title-input" id="title-input" placeholder="Title (e.g. notes.md)" value="${escapeAttr(gist.title)}">
+        <button class="btn btn-danger" id="btn-delete">Delete</button>
+        <span class="status" id="status"></span>
+      </div>
+      <div class="tabs">
+        <div class="tab ${currentTab === 'edit' ? 'active' : ''}" data-tab="edit">Edit</div>
+        <div class="tab ${currentTab === 'preview' ? 'active' : ''}" data-tab="preview">Preview</div>
+      </div>
+      <div class="panels">
+        <div class="panel ${currentTab === 'edit' ? 'active' : ''}" id="panel-edit">
+          <textarea class="editor" id="editor" spellcheck="false" placeholder="# Write your markdown here...">${escapeHtml(gist.content)}</textarea>
+        </div>
+        <div class="panel ${currentTab === 'preview' ? 'active' : ''}" id="panel-preview">
+          <div class="preview" id="preview"></div>
+        </div>
+      </div>
+    `;
+
+    // Events
+    const titleInput = document.getElementById('title-input');
+    const editor = document.getElementById('editor');
+    const status = document.getElementById('status');
+
+    const markSaved = debounce(() => {
+      status.textContent = 'Saved';
+      setTimeout(() => { if (status) status.textContent = ''; }, 1200);
+    }, 400);
+
+    titleInput.addEventListener('input', () => {
+      const g = getActive();
+      g.title = titleInput.value;
+      g.updated = Date.now();
+      save(gists);
+      renderSidebar();
+      markSaved();
+    });
+
+    editor.addEventListener('input', () => {
+      const g = getActive();
+      g.content = editor.value;
+      g.updated = Date.now();
+      save(gists);
+      markSaved();
+      // sidebar nur updaten wenn Reihenfolge sich ändert – der Einfachheit halber immer:
+      renderSidebar();
+    });
+
+    // Tab in textarea soll 2 Spaces einfügen statt Fokus zu verlieren
+    editor.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        editor.value = editor.value.slice(0, start) + '  ' + editor.value.slice(end);
+        editor.selectionStart = editor.selectionEnd = start + 2;
+        editor.dispatchEvent(new Event('input'));
+      }
+    });
+
+    document.getElementById('btn-delete').addEventListener('click', () => {
+      if (!confirm(`Delete gist "${gist.title || 'Untitled'}"?`)) return;
+      gists = gists.filter(g => g.id !== activeId);
+      save(gists);
+      activeId = gists[0]?.id || null;
+      render();
+    });
+
+    document.querySelectorAll('.tab').forEach(t => {
+      t.addEventListener('click', () => {
+        currentTab = t.dataset.tab;
+        if (currentTab === 'preview') {
+          renderPreview();
+        }
+        // panels toggle
+        document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === currentTab));
+        document.getElementById('panel-edit').classList.toggle('active', currentTab === 'edit');
+        document.getElementById('panel-preview').classList.toggle('active', currentTab === 'preview');
+      });
+    });
+
+    if (currentTab === 'preview') renderPreview();
+  }
+
+  function renderPreview() {
+    const gist = getActive();
+    if (!gist) return;
+    const preview = document.getElementById('preview');
+    if (!preview) return;
+    preview.innerHTML = md.render(gist.content || '_Nothing to preview_');
+  }
+
+  function render() {
+    renderSidebar();
+    renderMain();
+  }
+
+  // ---- Utils ----
+  function escapeHtml(s) {
+    return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function escapeAttr(s) {
+    return escapeHtml(s).replace(/"/g, '&quot;');
+  }
+  function debounce(fn, ms) {
+    let t;
+    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+  }
+
+  // ---- Actions ----
+  document.getElementById('btn-new').addEventListener('click', () => {
+    const g = {
+      id: uid(),
+      title: 'untitled.md',
+      content: '',
+      created: Date.now(),
+      updated: Date.now()
+    };
+    gists.push(g);
+    save(gists);
+    activeId = g.id;
+    currentTab = 'edit';
+    render();
+    setTimeout(() => document.getElementById('title-input')?.select(), 0);
+  });
+
+  // ---- Import / Export Modal ----
+  let modalTab = 'export';
+  let exportSelection = new Set();
+  let pendingImport = null; // { gists: [...] }
+  let importError = '';
+  let importMode = 'new-ids'; // 'new-ids' | 'merge-by-id'
+
+  const backdrop = document.getElementById('modal-backdrop');
+  const modalBody = document.getElementById('modal-body');
+  const modalFooter = document.getElementById('modal-footer');
+
+  function openModal() {
+    modalTab = 'export';
+    exportSelection = new Set(gists.map(g => g.id)); // standardmäßig alle ausgewählt
+    pendingImport = null;
+    importError = '';
+    backdrop.classList.add('open');
+    renderModal();
+  }
+
+  function closeModal() {
+    backdrop.classList.remove('open');
+  }
+
+  function renderModal() {
+    // Tab-States
+    document.querySelectorAll('.modal-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.mtab === modalTab);
+    });
+
+    if (modalTab === 'export') {
+      renderExportTab();
+    } else {
+      renderImportTab();
+    }
+  }
+
+  function renderExportTab() {
+    if (gists.length === 0) {
+      modalBody.innerHTML = `<div class="empty-state" style="height: auto; padding: 40px 20px;">No gists available to export.</div>`;
+      modalFooter.innerHTML = `<button class="btn" id="footer-cancel">Close</button>`;
+      document.getElementById('footer-cancel').addEventListener('click', closeModal);
+      return;
+    }
+
+    const sorted = [...gists].sort((a, b) => b.updated - a.updated);
+    const allSelected = exportSelection.size === gists.length;
+
+    modalBody.innerHTML = `
+      <div class="select-all-row">
+        <input type="checkbox" id="select-all" ${allSelected ? 'checked' : ''}>
+        <label for="select-all" style="cursor: pointer;">Select all (${exportSelection.size} / ${gists.length})</label>
+      </div>
+      <div class="export-list">
+        ${sorted.map(g => `
+          <label class="export-item">
+            <input type="checkbox" data-id="${g.id}" ${exportSelection.has(g.id) ? 'checked' : ''}>
+            <div class="export-item-info">
+              <div class="export-item-title">${escapeHtml(g.title || 'Untitled')}</div>
+              <div class="export-item-meta">${formatDate(g.updated)}</div>
+            </div>
+          </label>
+        `).join('')}
+      </div>
+    `;
+
+    modalFooter.innerHTML = `
+      <button class="btn" id="footer-cancel">Cancel</button>
+      <button class="btn btn-primary" id="footer-export" ${exportSelection.size === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>
+        Export ${exportSelection.size}
+      </button>
+    `;
+
+    document.getElementById('select-all').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        exportSelection = new Set(gists.map(g => g.id));
+      } else {
+        exportSelection = new Set();
+      }
+      renderExportTab();
+    });
+
+    modalBody.querySelectorAll('.export-item input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if (cb.checked) exportSelection.add(cb.dataset.id);
+        else exportSelection.delete(cb.dataset.id);
+        renderExportTab();
+      });
+    });
+
+    document.getElementById('footer-cancel').addEventListener('click', closeModal);
+    document.getElementById('footer-export').addEventListener('click', doExport);
+  }
+
+  function doExport() {
+    if (exportSelection.size === 0) return;
+    const selected = gists.filter(g => exportSelection.has(g.id));
+    const payload = {
+      format: 'local-gists',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      gists: selected
+    };
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `local-gists-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    closeModal();
+  }
+
+  function renderImportTab() {
+    modalBody.innerHTML = `
+      <label class="import-drop" id="import-drop">
+        <div style="font-size: 24px; margin-bottom: 8px;">📁</div>
+        <div><strong>Drop a JSON file here</strong> or click to select</div>
+        <div style="font-size: 12px; margin-top: 4px;">Accepts .json files exported from this tool</div>
+        <input type="file" id="import-file" accept="application/json,.json">
+      </label>
+      ${importError ? `<div class="error-msg">${escapeHtml(importError)}</div>` : ''}
+      ${pendingImport ? `
+        <div class="import-preview">
+          <div class="import-preview-count">
+            <strong>${pendingImport.gists.length}</strong> gist${pendingImport.gists.length === 1 ? '' : 's'} ready to import
+          </div>
+          <div class="radio-group">
+            <label>
+              <input type="radio" name="import-mode" value="new-ids" ${importMode === 'new-ids' ? 'checked' : ''}>
+              <span>
+                <strong>Add as new gists</strong>
+                <small>Imported gists will get new IDs. Safest option – nothing will be overwritten.</small>
+              </span>
+            </label>
+            <label>
+              <input type="radio" name="import-mode" value="merge-by-id" ${importMode === 'merge-by-id' ? 'checked' : ''}>
+              <span>
+                <strong>Merge by ID</strong>
+                <small>Gists with matching IDs will be overwritten, new ones added.</small>
+              </span>
+            </label>
+          </div>
+        </div>
+      ` : ''}
+    `;
+
+    modalFooter.innerHTML = `
+      <button class="btn" id="footer-cancel">Cancel</button>
+      <button class="btn btn-primary" id="footer-import" ${!pendingImport ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>
+        ${pendingImport ? `Import ${pendingImport.gists.length}` : 'Import'}
+      </button>
+    `;
+
+    const drop = document.getElementById('import-drop');
+    const fileInput = document.getElementById('import-file');
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) handleImportFile(e.target.files[0]);
+    });
+
+    drop.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      drop.classList.add('drag-over');
+    });
+    drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+    drop.addEventListener('drop', (e) => {
+      e.preventDefault();
+      drop.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) handleImportFile(e.dataTransfer.files[0]);
+    });
+
+    modalBody.querySelectorAll('input[name="import-mode"]').forEach(r => {
+      r.addEventListener('change', () => { importMode = r.value; });
+    });
+
+    document.getElementById('footer-cancel').addEventListener('click', closeModal);
+    document.getElementById('footer-import').addEventListener('click', doImport);
+  }
+
+  function handleImportFile(file) {
+    importError = '';
+    pendingImport = null;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        const imported = validateImport(data);
+        pendingImport = { gists: imported };
+      } catch (err) {
+        importError = 'Failed to read file: ' + err.message;
+      }
+      renderImportTab();
+    };
+    reader.onerror = () => {
+      importError = 'Could not read the file.';
+      renderImportTab();
+    };
+    reader.readAsText(file);
+  }
+
+  function validateImport(data) {
+    // Akzeptiere zwei Formate:
+    // 1) { format: 'local-gists', gists: [...] }
+    // 2) [...] direkt ein Array (Fallback, falls jemand nur das Array speichert)
+    let list = null;
+    if (Array.isArray(data)) {
+      list = data;
+    } else if (data && Array.isArray(data.gists)) {
+      list = data.gists;
+    } else {
+      throw new Error('Unrecognized gist format.');
+    }
+
+    if (list.length === 0) throw new Error('The file contains no gists.');
+
+    // Jeden Eintrag validieren/normalisieren
+    return list.map((g, i) => {
+      if (typeof g !== 'object' || g === null) {
+        throw new Error(`Entry ${i + 1} is not an object.`);
+      }
+      if (typeof g.content !== 'string') {
+        throw new Error(`Entry ${i + 1}: "content" is missing or not a string.`);
+      }
+      return {
+        id: typeof g.id === 'string' ? g.id : uid(),
+        title: typeof g.title === 'string' ? g.title : 'untitled.md',
+        content: g.content,
+        created: typeof g.created === 'number' ? g.created : Date.now(),
+        updated: typeof g.updated === 'number' ? g.updated : Date.now()
+      };
+    });
+  }
+
+  function doImport() {
+    if (!pendingImport) return;
+    const incoming = pendingImport.gists;
+
+    if (importMode === 'new-ids') {
+      // Allen importierten Gists neue IDs geben
+      const withNewIds = incoming.map(g => ({ ...g, id: uid() }));
+      gists = [...gists, ...withNewIds];
+      activeId = withNewIds[0].id;
+    } else {
+      // merge-by-id: existierende mit gleicher ID überschreiben, neue hinzufügen
+      const byId = new Map(gists.map(g => [g.id, g]));
+      for (const g of incoming) {
+        byId.set(g.id, g);
+      }
+      gists = Array.from(byId.values());
+      activeId = incoming[0].id;
+    }
+
+    save(gists);
+    closeModal();
+    currentTab = 'edit';
+    render();
+  }
+
+  // Modal-Events
+  document.getElementById('btn-io').addEventListener('click', openModal);
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) closeModal();
+  });
+  document.querySelectorAll('.modal-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      modalTab = t.dataset.mtab;
+      renderModal();
+    });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && backdrop.classList.contains('open')) closeModal();
+  });
+
+  // Initial render
+  render();
+</script>
+</body>
+</html>
