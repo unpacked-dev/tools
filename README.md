@@ -5,6 +5,9 @@ Just some handy tools 🔨 to make your life easier
 A simple clone of Github Gists, but fully local in YOUR Browser.
 [Check it out](https://unpacked-dev.github.io/tools/local_gists/index.html)
 
+## Trading 212 Margin Calculator
+A simple tool to calculate CFD Margin for BTC position on Trading 212 [use at your own risk - here](https://unpacked-dev.github.io/tools/t212_cfd_margin/index.html).
+
 ## ABAP Comment generator
 A simple webapp for [generating multi-line abap-comments](https://unpacked-dev.github.io/tools/abap_comments/index.html).
 

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>CFD Liquidations-Rechner · BTC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0D12; --card:#12171F; --card2:#161D28; --border:#232C39;
+    --text:#EDF1F7; --muted:#828E9F; --faint:#5A6472;
+    --teal:#23D7B0; --amber:#F6B444; --red:#F4596A;
+    --shadow:0 18px 40px -20px rgba(0,0,0,.7);
+    --r:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:var(--bg); color:var(--text);
+    min-height:100dvh; line-height:1.45;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background-image:
+      radial-gradient(120% 60% at 50% -8%, rgba(35,215,176,.10), transparent 60%),
+      radial-gradient(90% 40% at 90% 8%, rgba(244,89,106,.06), transparent 55%);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:20px 18px 40px}
+  .mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .eyebrow{font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:.16em;font-size:.68rem;font-weight:600;color:var(--muted)}
+
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .btc{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(145deg,#F7931A,#c76f0f);color:#0A0D12;font-weight:700;font-size:1.05rem;
+    font-family:'Space Grotesk';box-shadow:0 6px 16px -6px rgba(247,147,26,.7)}
+  .brand h1{font-family:'Space Grotesk';font-size:.95rem;font-weight:600;letter-spacing:-.01em}
+  .brand span{display:block;font-size:.66rem;color:var(--muted);letter-spacing:.04em}
+  .conn{display:flex;align-items:center;gap:7px;font-size:.7rem;color:var(--muted);
+    background:var(--card);border:1px solid var(--border);padding:6px 10px;border-radius:20px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);transition:.3s}
+  .dot.live{background:var(--teal);box-shadow:0 0 0 0 rgba(35,215,176,.5);animation:pulse 2.2s infinite}
+  .dot.manual{background:var(--amber)} .dot.err{background:var(--red)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(35,215,176,.45)}70%{box-shadow:0 0 0 7px rgba(35,215,176,0)}100%{box-shadow:0 0 0 0 rgba(35,215,176,0)}}
+
+  .hero{margin-bottom:18px}
+  .hero .lbl{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
+  .price{font-size:clamp(2.9rem,15vw,3.9rem);font-weight:700;line-height:1;transition:opacity .18s}
+  .price .cur{color:var(--muted);font-weight:500;font-size:.42em;margin-right:.15em}
+  .price.flash{opacity:.45}
+  .chip{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:20px;display:inline-flex;gap:4px;align-items:center}
+  .chip.up{color:var(--teal);background:rgba(35,215,176,.12)}
+  .chip.down{color:var(--red);background:rgba(244,89,106,.12)}
+  .updated{font-size:.66rem;color:var(--faint);margin-top:8px}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+    padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
+  .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+
+  /* gauge: FESTE Skala — oben grün, Margin Call bei 50 %, Liquidation unten */
+  .gauge{display:flex;gap:16px;align-items:stretch;padding:12px 0 10px}
+  .track{position:relative;width:12px;height:214px;border-radius:8px;background:#0d1219;
+    border:1px solid var(--border);overflow:hidden;flex:none}
+  .fill{position:absolute;left:0;right:0;top:0;bottom:0;border-radius:8px;
+    background:linear-gradient(180deg,var(--teal) 0%,var(--teal) 32%,var(--amber) 50%,var(--red) 100%);transition:background .4s}
+  .gmarks{flex:1;position:relative;height:214px}
+  .gmark{position:absolute;left:0;right:0;transform:translateY(-50%);transition:top .55s cubic-bezier(.4,0,.2,1)}
+  .gmark .row{display:flex;align-items:center;gap:8px}
+  .gmark .pin{width:9px;height:9px;border-radius:50%;flex:none;border:2px solid var(--bg)}
+  .gmark .t{font-family:'Space Grotesk';font-size:.72rem;font-weight:600}
+  .gmark .p{font-size:.72rem;color:var(--muted);margin-left:auto}
+  .gmark.cur .pin{background:var(--text);box-shadow:0 0 0 4px rgba(237,241,247,.14)} .gmark.cur .t{color:var(--text)}
+  .gmark.mc .pin{background:var(--amber)} .gmark.mc .t{color:var(--amber)}
+  .gmark.liq .pin{background:var(--red)} .gmark.liq .t{color:var(--red)}
+  .runway{font-size:.7rem;color:var(--muted);margin-top:8px;text-align:center;line-height:1.5}
+  .runway b{color:var(--text)}
+
+  .results{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .res{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;position:relative;overflow:hidden;min-width:0}
+  .res::before{content:"";position:absolute;inset:0 auto 0 0;width:3px}
+  .res.mc::before{background:var(--amber)} .res.liq::before{background:var(--red)}
+  .res .k{font-family:'Space Grotesk';font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+  .res.mc .k{color:var(--amber)} .res.liq .k{color:var(--red)}
+  .res .big{font-size:1.9rem;font-weight:700;line-height:1;margin-bottom:2px}
+  .res .arrow{font-size:.75em}
+  .res .sub{font-size:.72rem;color:var(--muted);margin-top:8px;display:flex;justify-content:space-between;gap:6px}
+  .res .sub b{color:var(--text);font-weight:600}
+
+  .field{margin-bottom:14px}
+  .field:last-child{margin-bottom:0}
+  .field label{display:block;font-size:.74rem;color:var(--muted);margin-bottom:6px;font-weight:500}
+  .inbox{display:flex;align-items:center;background:var(--card2);border:1px solid var(--border);
+    border-radius:12px;padding:0 12px;transition:border-color .15s,box-shadow .15s;min-width:0}
+  .inbox:focus-within{border-color:var(--teal);box-shadow:0 0 0 3px rgba(35,215,176,.14)}
+  .inbox .pre{color:var(--faint);font-size:.85rem;margin-right:6px;flex:none}
+  .inbox .suf{color:var(--faint);font-size:.85rem;margin-left:6px;flex:none}
+  .inbox input{flex:1;background:none;border:none;outline:none;color:var(--text);
+    font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:500;padding:12px 0;min-width:0;width:100%}
+  .inbox input:disabled{color:var(--muted)}
+
+  .seg{display:flex;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:4px;gap:4px}
+  .seg button{flex:1;border:none;background:none;color:var(--muted);font-family:'Space Grotesk';
+    font-weight:600;font-size:.82rem;padding:9px;border-radius:9px;cursor:pointer;transition:.15s;display:flex;gap:6px;align-items:center;justify-content:center}
+  .seg button.on{background:var(--bg);color:var(--text);box-shadow:0 2px 8px -2px rgba(0,0,0,.5)}
+  .seg.dir button.on[data-v="long"]{color:var(--teal)}
+  .seg.dir button.on[data-v="short"]{color:var(--red)}
+  .segmini{display:inline-flex;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:3px}
+  .segmini button{border:none;background:none;color:var(--muted);font-size:.68rem;font-weight:600;
+    padding:5px 10px;border-radius:6px;cursor:pointer;font-family:'Space Grotesk'}
+  .segmini button.on{background:var(--bg);color:var(--teal)}
+
+  .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);
+    border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+  .strip .cell{background:var(--card);padding:13px 12px;text-align:center;min-width:0}
+  .strip .cell .v{font-family:'JetBrains Mono';font-weight:700;font-size:1.05rem;font-variant-numeric:tabular-nums}
+  .strip .cell .n{font-size:.64rem;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+  .lvl-ok{color:var(--teal)} .lvl-warn{color:var(--amber)} .lvl-bad{color:var(--red)}
+
+  .refresh{background:var(--card2);border:1px solid var(--border);color:var(--muted);
+    border-radius:9px;width:32px;height:32px;cursor:pointer;font-size:.9rem;display:grid;place-items:center;transition:.2s;flex:none}
+  .refresh:active{transform:rotate(180deg)}
+  .note{font-size:.7rem;color:var(--faint);line-height:1.6;margin-top:6px}
+  .note b{color:var(--muted);font-weight:600}
+  .banner{font-size:.72rem;color:var(--amber);background:rgba(246,180,68,.1);
+    border:1px solid rgba(246,180,68,.25);border-radius:10px;padding:9px 12px;margin-bottom:16px;display:none}
+  .banner.show{display:block}
+  footer{text-align:center;margin-top:26px}
+  .reset{background:none;border:none;color:var(--faint);font-size:.72rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+  /* layout: mobil einspaltig, Desktop zweispaltig */
+  .cols{display:block}
+  @media (min-width:820px){
+    .wrap{max-width:920px}
+    .cols{display:grid;grid-template-columns:minmax(300px,340px) 1fr;gap:18px;align-items:stretch;margin-bottom:16px}
+    .col-left{display:flex;flex-direction:column}
+    .col-left .card{flex:1;margin-bottom:0}
+    .col-right>*:last-child{margin-bottom:0}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.demo-modal{position:fixed;inset:0;background:rgba(0,0,0,.82);backdrop-filter:blur(6px);display:flex;justify-content:center;align-items:center;z-index:99999;padding:20px}
+.demo-modal.hidden{display:none}
+.demo-box{width:100%;max-width:460px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:26px;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.demo-box h2{margin-bottom:16px;font-family:'Space Grotesk'}
+.demo-box p{color:var(--muted);margin-bottom:14px;line-height:1.6}
+.demo-box button{width:100%;margin-top:8px;padding:14px;border:none;border-radius:12px;background:var(--teal);color:#08110d;font-weight:700;font-size:1rem;cursor:pointer}
+
+</style>
+</head>
+<body>
+
+<div id="demoModal" class="demo-modal">
+<div class="demo-box">
+<h2>⚠️ Demo-Hinweis</h2>
+<p>Diese Website dient ausschließlich Demonstrations- und Testzwecken. Sämtliche Berechnungen und Angaben erfolgen ohne Gewähr und können fehlerhaft oder unvollständig sein.</p>
+<p>Sie stellt keine Anlage- oder Finanzberatung dar. Die Nutzung erfolgt ausschließlich auf eigene Gefahr. Es wird keinerlei Haftung für finanzielle Verluste oder sonstige Schäden übernommen.</p>
+<button id="acceptDemo">Verstanden</button>
+</div></div>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="btc mono">₿</div>
+      <div><h1>Liquidations-Rechner</h1><span>CFD · Bitcoin</span></div>
+    </div>
+    <div class="conn"><span class="dot" id="dot"></span><span id="connTxt">…</span></div>
+  </header>
+
+  <div class="hero">
+    <div class="lbl"><span class="eyebrow">BTC / EUR</span><span class="chip" id="chip"></span></div>
+    <div class="price mono" id="price">—</div>
+    <div class="updated" id="updated">wird geladen…</div>
+  </div>
+
+  <div id="banner" class="banner"></div>
+
+  <div class="cols">
+  <div class="col-left">
+  <div class="card">
+    <div class="card-head"><span class="eyebrow">Deine Position</span></div>
+
+    <div class="seg dir" id="dir">
+      <button data-v="long" class="on">↓ Long</button>
+      <button data-v="short">↑ Short</button>
+    </div>
+
+    <div class="field" style="margin-top:14px"><label>Freies Geld</label>
+      <div class="inbox"><span class="pre">€</span><input id="fF" inputmode="decimal" placeholder="350"></div></div>
+    <div class="field"><label>Margin</label>
+      <div class="inbox"><span class="pre">€</span><input id="fM" inputmode="decimal" placeholder="1749"></div></div>
+    <div class="field"><label>Hebel</label>
+      <div class="inbox"><input id="fL" inputmode="decimal" placeholder="2"><span class="suf">×</span></div></div>
+
+    <div class="field">
+      <label style="display:flex;justify-content:space-between;align-items:center">
+        <span>Aktueller BTC-Kurs</span>
+        <span class="segmini" id="mode"><button data-v="live" class="on">Live</button><button data-v="manual">Manuell</button></span>
+      </label>
+      <div class="inbox"><span class="pre">€</span><input id="fP" inputmode="decimal" placeholder="60000" disabled>
+        <button class="refresh" id="refresh" title="Aktualisieren">↻</button></div>
+    </div>
+  </div>
+  </div>
+
+  <div class="col-right">
+  <div class="results">
+    <div class="res mc">
+      <div class="k">Margin Call</div>
+      <div class="big mono" id="mcPct">—</div>
+      <div class="sub"><span>Zielkurs</span><b class="mono" id="mcPrice">—</b></div>
+      <div class="sub"><span>Verlust</span><b class="mono" id="mcLoss">—</b></div>
+    </div>
+    <div class="res liq">
+      <div class="k">Liquidation</div>
+      <div class="big mono" id="liqPct">—</div>
+      <div class="sub"><span>Zielkurs</span><b class="mono" id="liqPrice">—</b></div>
+      <div class="sub"><span>Verlust</span><b class="mono" id="liqLoss">—</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="eyebrow">Abstand bis Liquidation</span></div>
+    <div class="gauge">
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="gmarks" id="gmarks">
+        <div class="gmark cur" style="top:6%"><div class="row"><span class="pin"></span><span class="t">Jetzt</span><span class="p mono" id="gCur">—</span></div></div>
+        <div class="gmark mc"  style="top:50%"><div class="row"><span class="pin"></span><span class="t">Margin Call</span><span class="p mono" id="gMc">—</span></div></div>
+        <div class="gmark liq" style="top:100%"><div class="row"><span class="pin"></span><span class="t">Liquidation</span><span class="p mono" id="gLiq">—</span></div></div>
+      </div>
+    </div>
+    <div class="runway" id="runway">—</div>
+  </div>
+  </div>
+  </div>
+
+  <div class="strip">
+    <div class="cell"><div class="v mono" id="sLevel">—</div><div class="n">Level</div></div>
+    <div class="cell"><div class="v mono" id="sPos">—</div><div class="n">Position</div></div>
+    <div class="cell"><div class="v mono" id="sEq">—</div><div class="n">Kontowert</div></div>
+  </div>
+
+  <p class="note">
+    <b>Regeln (Trading 212, Stand 2025/26):</b> Warn-Mail bei Level 45 %, automatischer Stop-out bei 25 %.
+    Krypto-CFD für EU-Privatkunden = Hebel 2. Prozente = Bewegung ab dem aktuellen Kurs.
+    <b>Nicht enthalten:</b> Overnight-Gebühren, Spread und Gap-Risiko — real wird's minimal früher eng.
+    Momentaufnahme, keine Anlageberatung.
+  </p>
+
+  <footer><button class="reset" id="reset">Eingaben zurücksetzen</button></footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id)};
+  var deFmt=new Intl.NumberFormat('de-DE',{maximumFractionDigits:0});
+  var deFmt2=new Intl.NumberFormat('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
+  var eur=function(n){return deFmt.format(Math.round(n))+' €'};
+  var clamp=function(v,lo,hi){return Math.max(lo,Math.min(hi,v))};
+
+  var state={F:350,M:1749,L:2,dir:'long',mode:'live',P:60000};
+
+function initDemoNotice(){
+ var k='demo_notice_accepted';
+ var m=$('demoModal');
+ if(localStorage.getItem(k)){m.classList.add('hidden');return;}
+ $('acceptDemo').addEventListener('click',function(){
+   localStorage.setItem(k,'1');
+   m.classList.add('hidden');
+ });
+}
+
+
+  function load(){try{var s=localStorage.getItem('cfd_v1');if(s)Object.assign(state,JSON.parse(s));}catch(e){}}
+  function save(){try{localStorage.setItem('cfd_v1',JSON.stringify(state));}catch(e){}}
+
+  function parseNum(v){
+    if(v==null)return NaN;
+    v=(''+v).replace(/[\s€×x]/gi,'');
+    if(v.indexOf(',')>-1&&v.indexOf('.')>-1)v=v.replace(/\./g,'').replace(',','.');
+    else v=v.replace(',','.');
+    var n=parseFloat(v);return isNaN(n)?NaN:n;
+  }
+
+  function compute(){
+    var F=state.F,M=state.M,L=state.L,P=state.P,dir=state.dir;
+    var N=M*L, T=F+M;
+    var level=(F>=0)?(F+M)/(F+2*M):(F+M)/M*0.5;
+    var dMc=(F+0.1*M)/(N-0.9*M);
+    var dLiq=(F+0.5*M)/(N-0.5*M);
+    var okMc=isFinite(dMc), okLiq=isFinite(dLiq);
+    var sign=dir==='long'?-1:1, dArrow=dir==='long'?'↓':'↑';
+    var over = okLiq && dLiq>=1;
+    var pMc=P*(1+sign*dMc), pLiq=P*(1+sign*dLiq);
+
+    // result cards
+    $('mcPct').innerHTML = okMc? '<span class="arrow">'+dArrow+'</span> '+deFmt2.format(Math.abs(dMc)*100)+'%' : '—';
+    $('liqPct').innerHTML= (okLiq&&!over)?'<span class="arrow">'+dArrow+'</span> '+deFmt2.format(Math.abs(dLiq)*100)+'%' : (over?'sicher':'—');
+    $('mcLoss').textContent = okMc? eur(N*dMc):'—';
+    $('liqLoss').textContent= (okLiq&&!over)?eur(N*dLiq):'—';
+    $('mcPrice').textContent = (okMc&&P)? eur(pMc):'—';
+    $('liqPrice').textContent= (okLiq&&P&&!over)?eur(pLiq):'—';
+
+    // status strip
+    var lv=$('sLevel'); lv.textContent=isFinite(level)?deFmt2.format(level*100)+'%':'—';
+    lv.className='v mono '+(level<0.30?'lvl-bad':level<0.50?'lvl-warn':'lvl-ok');
+    $('sPos').textContent=eur(N); $('sEq').textContent=eur(T);
+
+    // ---- gauge: feste Skala. Margin Call = 50 %, Liquidation = 100 %. "Jetzt" wandert. ----
+    // Position von "Jetzt" aus linearer Preis-Skala: 50 % - 50 %*(dMc / (dLiq - dMc))
+    var posNow=6, gap=dLiq-dMc;
+    if(okMc && okLiq && Math.abs(gap)>1e-9){
+      posNow = 50 - 50*(dMc/gap);
+      posNow = (dMc>=0) ? clamp(posNow,1.5,42) : clamp(posNow,58,94);
+    }
+    document.querySelector('.gmark.cur').style.top = posNow+'%';
+
+    if(over){
+      $('fill').style.background='linear-gradient(180deg,var(--teal),var(--teal) 68%,var(--amber))';
+      $('gLiq').textContent='—';
+      $('runway').innerHTML='<b>Kein Stop-out durch Kurs allein</b> — dein freies Geld deckt einen Totalverlust der Position.';
+    } else {
+      $('fill').style.background='linear-gradient(180deg,var(--teal) 0%,var(--teal) 32%,var(--amber) 50%,var(--red) 100%)';
+      $('gLiq').textContent=(okLiq&&P)?eur(pLiq):'—';
+      if(okLiq&&dLiq>0) $('runway').innerHTML='Puffer bis Liquidation: <b>'+dArrow+' '+deFmt2.format(dLiq*100)+' %</b> ('+eur(Math.abs(P-pLiq))+')';
+      else $('runway').textContent='Position bereits im Liquidationsbereich.';
+    }
+    $('gCur').textContent=P?eur(P):'—';
+    $('gMc').textContent=(okMc&&P)?eur(pMc):'—';
+  }
+
+  function syncInputs(){
+    $('fF').value=state.F; $('fM').value=state.M; $('fL').value=state.L; $('fP').value=state.P;
+    document.querySelectorAll('#dir button').forEach(function(b){b.classList.toggle('on',b.dataset.v===state.dir)});
+    document.querySelectorAll('#mode button').forEach(function(b){b.classList.toggle('on',b.dataset.v===state.mode)});
+    $('fP').disabled = state.mode==='live';
+  }
+  function bindNum(id,key){
+    $(id).addEventListener('input',function(){var n=parseNum(this.value);if(!isNaN(n)){state[key]=n;save();compute();}});
+  }
+  bindNum('fF','F'); bindNum('fM','M'); bindNum('fL','L');
+  $('fP').addEventListener('input',function(){var n=parseNum(this.value);if(!isNaN(n)){state.P=n;save();compute();}});
+
+  $('dir').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+    state.dir=b.dataset.v;syncInputs();save();compute();});
+  $('mode').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+    state.mode=b.dataset.v;syncInputs();save();compute();if(state.mode==='live')fetchPrice();});
+  $('refresh').addEventListener('click',fetchPrice);
+  $('reset').addEventListener('click',function(){
+    try{localStorage.removeItem('cfd_v1');}catch(e){}
+    state={F:350,M:1749,L:2,dir:'long',mode:'live',P:60000};
+    syncInputs();compute();fetchPrice();
+  });
+
+  function setConn(cls,txt){$('dot').className='dot '+cls;$('connTxt').textContent=txt;}
+  function showBanner(msg){var b=$('banner');if(msg){b.textContent=msg;b.classList.add('show');}else b.classList.remove('show');}
+  function renderPrice(p,chg){
+    var el=$('price');
+    el.classList.add('flash'); setTimeout(function(){el.classList.remove('flash')},180);
+    el.innerHTML='<span class="cur">€</span>'+deFmt.format(Math.round(p));
+    var chip=$('chip');
+    if(chg!=null&&isFinite(chg)){chip.className='chip '+(chg>=0?'up':'down');
+      chip.textContent=(chg>=0?'▲ ':'▼ ')+deFmt2.format(Math.abs(chg))+'% 24h';}
+    else chip.textContent='';
+  }
+  function fetchPrice(){
+    if(state.mode!=='live'){setConn('manual','Manuell');$('updated').textContent='Manueller Kurs aktiv';return;}
+    setConn('','lädt…');
+    fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur&include_24hr_change=true')
+      .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
+      .then(function(d){
+        var p=d&&d.bitcoin&&d.bitcoin.eur; if(!p)throw new Error('no data');
+        state.P=p; save();
+        renderPrice(p, d.bitcoin.eur_24h_change);
+        $('fP').value=Math.round(p);
+        setConn('live','Live'); showBanner('');
+        var t=new Date(); $('updated').textContent='Aktualisiert '+t.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · CoinGecko';
+        compute();
+      })
+      .catch(function(){
+        setConn('err','Offline');
+        showBanner('Live-Preis nicht erreichbar. Wechsle auf „Manuell" und trag den Kurs selbst ein.');
+        $('updated').textContent='Letzter bekannter Kurs: '+eur(state.P);
+        renderPrice(state.P,null); compute();
+      });
+  }
+
+  load(); syncInputs(); renderPrice(state.P,null); compute(); fetchPrice(); initDemoNotice();
+  setInterval(function(){if(state.mode==='live'&&!document.hidden)fetchPrice();},30000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&state.mode==='live')fetchPrice();});
+})();
+</script>
+</body>
+</html>
