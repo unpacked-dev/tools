@@ -1,151 +1,364 @@
-<!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-theme="dark" style="color-scheme: dark;">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>ABAP Kommentar-Generator</title>
+<meta name="description" content="Text eingeben, fertigen ABAP-Kommentarblock kopieren.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
 
-<head>
-	<meta charset="UTF-8" />
-	<title>ABAP Comment-Generator</title>
-	<style>
-		body {
-			font-family: system-ui, Arial, sans-serif;
-			margin: 0;
-			min-height: 100vh;
-			background: radial-gradient(circle at top, #1e3a8a, #020617);
-			color: #e5e7eb;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-		}
+:root {
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 
-		.card {
-			width: 800px;
-			max-width: 95%;
-			background: rgba(255, 255, 255, 0.05);
-			backdrop-filter: blur(20px);
-			border-radius: 20px;
-			padding: 25px;
-			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-			border: 1px solid rgba(255, 255, 255, 0.1);
-		}
+  --paper:   #e8ecf2;
+  --surface: #ffffff;
+  --sunken:  #f3f6fa;
+  --ink:     #141b24;
+  --ink-2:   #56626f;
+  --ink-3:   #8b96a3;
+  --rule:    #d3dae3;
+  --rule-2:  #e5e9ef;
+  --dim:     #b6c1cd;
+  --accent:  #1150bd;
+  --accent-2:#e1ebfd;
+  --on-accent: #ffffff;
+  --warn:    #a82a25;
+}
 
-		h2 {
-			margin: 0 0 15px;
-			font-size: 22px;
-			letter-spacing: 0.5px;
-		}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#0f151d; --surface:#161e28; --sunken:#1b242f;
+    --ink:#dfe6ef; --ink-2:#97a3b2; --ink-3:#6c7887;
+    --rule:#293441; --rule-2:#212b37; --dim:#3d4b5c;
+    --accent:#6ea8ff; --accent-2:#1b2c47;
+    --on-accent:#0f151d; --warn:#ff8a80;
+  }
+}
 
-		textarea {
-			width: calc(100% - 25px);
-			height: 120px;
-			padding: 14px;
-			border-radius: 14px;
-			border: 1px solid rgba(255, 255, 255, 0.1);
-			background: rgba(0, 0, 0, 0.4);
-			color: white;
-			resize: vertical;
-			outline: none;
-			margin-bottom: 20px;
-			transition: 0.2s;
-		}
+:root[data-theme="dark"] {
+  --paper:#0f151d; --surface:#161e28; --sunken:#1b242f;
+  --ink:#dfe6ef; --ink-2:#97a3b2; --ink-3:#6c7887;
+  --rule:#293441; --rule-2:#212b37; --dim:#3d4b5c;
+  --accent:#6ea8ff; --accent-2:#1b2c47;
+  --on-accent:#0f151d; --warn:#ff8a80;
+}
 
-		textarea:focus {
-			border-color: #38bdf8;
-			box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
-		}
+html { -webkit-text-size-adjust: 100%; }
 
-		.code-wrapper {
-			position: relative;
-			cursor: pointer;
-		}
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
 
-		pre {
-			margin: 0;
-			padding: 18px;
-			border-radius: 16px;
-			background: linear-gradient(135deg, #020617, #020617 60%, #0f172a);
-			color: #38bdf8;
-			font-size: 13px;
-			line-height: 1.5;
-			white-space: pre-wrap;
-			box-shadow: inset 0 0 20px rgba(56, 189, 248, 0.1), 0 10px 30px rgba(0, 0, 0, 0.5);
-			transition: transform 0.15s, box-shadow 0.15s;
-		}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-		.code-wrapper:hover pre {
-			transform: scale(1.01);
-			box-shadow: inset 0 0 25px rgba(56, 189, 248, 0.2), 0 15px 40px rgba(0, 0, 0, 0.7);
-		}
+.bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--rule);
+}
 
-		.hint {
-			position: absolute;
-			top: 10px;
-			right: 15px;
-			font-size: 11px;
-			opacity: 0.4;
-		}
+.mark {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mark span { color: var(--accent); }
 
-		.copied-toast {
-			position: fixed;
-			bottom: 30px;
-			left: 50%;
-			transform: translateX(-50%) translateY(20px);
-			background: #22c55e;
-			color: black;
-			padding: 10px 18px;
-			border-radius: 999px;
-			font-size: 13px;
-			opacity: 0;
-			transition: 0.3s;
-			box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-		}
+.icon-btn {
+  flex: none;
+  display: grid; place-items: center;
+  width: 32px; height: 32px;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.icon-btn:hover { color: var(--ink); border-color: var(--ink-3); }
+.icon-btn svg { width: 15px; height: 15px; }
 
-		.copied-toast.show {
-			opacity: 1;
-			transform: translateX(-50%) translateY(0);
-		}
-	</style>
+.wrap { max-width: 720px; margin: 0 auto; padding: 22px 20px 64px; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+}
+.panel + .panel { margin-top: 18px; }
+
+textarea {
+  display: block;
+  width: 100%;
+  min-height: 140px;
+  padding: 16px 20px;
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  resize: vertical;
+  outline: none;
+}
+textarea::placeholder { color: var(--ink-3); }
+
+.viewport { overflow-x: auto; padding: 18px 20px 17px; }
+
+.inner {
+  position: relative;
+  width: max-content;
+  min-width: 100%;
+  overflow: hidden;
+}
+
+.code {
+  position: relative; z-index: 1;
+  margin: 0;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  cursor: copy;
+}
+.code i { font-style: normal; color: var(--accent); font-weight: 500; }
+.code u { text-decoration: none; color: var(--dim); }
+
+.sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  background: linear-gradient(100deg, transparent 38%, var(--accent-2) 50%, transparent 62%);
+  pointer-events: none;
+}
+.inner.copied .sweep { animation: sweep 0.6s ease-out; }
+@keyframes sweep {
+  from { opacity: 1; transform: translateX(-48%); }
+  to   { opacity: 0; transform: translateX(48%); }
+}
+
+.foot {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 11px 18px;
+  border-top: 1px solid var(--rule-2);
+  background: var(--sunken);
+  border-radius: 0 0 6px 6px;
+}
+.meta { flex: 1 1 180px; margin: 0; font-size: 12.5px; color: var(--ink-2); }
+.meta.over { color: var(--warn); }
+
+.btn {
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  padding: 8px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(1.08); }
+
+.tip { margin: 14px 2px 0; font-size: 12.5px; color: var(--ink-3); }
+.tip kbd {
+  font-family: var(--mono); font-size: 11.5px;
+  padding: 1px 5px;
+  border: 1px solid var(--rule);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  color: var(--ink-2);
+}
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 560px) {
+  .wrap { padding: 16px 14px 48px; }
+  textarea { padding: 14px; }
+  .viewport { padding: 14px; }
+  .code, textarea { font-size: 12.5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+</style>
 </head>
 
 <body>
 
-	<div class="card">
-		<h2>✨ ABAP Comment-Generator</h2>
+<header class="bar">
+  <div class="mark"><span>*&amp;</span> ABAP Kommentar-Generator</div>
+  <button class="icon-btn" id="theme" type="button" title="Helles oder dunkles Design" aria-label="Design wechseln">
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4"></circle>
+      <path d="M8 1.8a6.2 6.2 0 0 1 0 12.4z" fill="currentColor"></path>
+    </svg>
+  </button>
+</header>
 
-		<textarea id="input" placeholder="Your comment..."></textarea>
+<main class="wrap">
 
-		<div class="code-wrapper" id="codeWrapper">
-			<span class="hint">Click to copy</span>
-			<pre id="output"></pre>
-		</div>
-	</div>
+  <section class="panel">
+    <textarea id="text" spellcheck="false" aria-label="Kommentartext" placeholder="Liest die offenen Positionen aus VBAK/VBAP
+und gibt sie als ALV aus."></textarea>
+  </section>
 
-	<div class="copied-toast" id="toast">✔ Copied</div>
+  <section class="panel">
+    <div class="viewport">
+      <div class="inner" id="inner">
+        <div class="sweep" aria-hidden="true"></div>
+        <pre class="code" id="code" title="Klicken zum Kopieren"><i>*&amp;</i><u>---------------------------------------------------------------------</u><i>*</i>
+<i>*&amp;</i> Liest die offenen Positionen aus VBAK/VBAP
+<i>*&amp;</i> und gibt sie als ALV aus.
+<i>*&amp;</i><u>---------------------------------------------------------------------</u><i>*</i></pre>
+      </div>
+    </div>
+    <div class="foot">
+      <p class="meta" id="meta">4 Zeilen, bis Spalte 72.</p>
+      <button class="btn" id="copy" type="button">Kopieren</button>
+    </div>
+  </section>
 
-	<script>
-		const input = document.getElementById("input");
-    const output = document.getElementById("output");
-    const wrapper = document.getElementById("codeWrapper");
-    const toast = document.getElementById("toast");
+  <p class="tip">Auf den Block klicken kopiert ihn ebenfalls. Tastatur: <kbd>Strg</kbd> + <kbd>Enter</kbd>.</p>
+  <p class="sr" id="live" role="status" aria-live="polite"></p>
 
-    function generate(text) {
-      const lines = text.split("\n").map(line => `*& ${line}`);
-      return `*&---------------------------------------------------------------------*\n${lines.join("\n")}\n*&---------------------------------------------------------------------*`;
-    }
+</main>
 
-    function update() {
-      output.textContent = generate(input.value.trim());
-    }
+<script>
+(function () {
+  "use strict";
 
-    input.addEventListener("input", update);
+  var WIDTH = 72, PREFIX = "*&", FILL = "-", CLOSE = "*";
+  var RULE = PREFIX + new Array(WIDTH - PREFIX.length - CLOSE.length + 1).join(FILL) + CLOSE;
+  var KEY = "abap-kommentar-generator/v2";
 
-    wrapper.addEventListener("click", () => {
-      navigator.clipboard.writeText(output.textContent);
-      toast.classList.add("show");
-      setTimeout(() => toast.classList.remove("show"), 1200);
+  var text  = document.getElementById("text"),
+      code  = document.getElementById("code"),
+      inner = document.getElementById("inner"),
+      meta  = document.getElementById("meta"),
+      copy  = document.getElementById("copy"),
+      theme = document.getElementById("theme"),
+      live  = document.getElementById("live");
+
+  var current = "";
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function build() {
+    var body = text.value.replace(/\s+$/, "").split("\n").map(function (line) {
+      return (PREFIX + " " + line.replace(/\t/g, "  ")).replace(/\s+$/, "");
     });
+    return [RULE].concat(body, [RULE]);
+  }
 
-    update();
-	</script>
+  function paint(line) {
+    if (line === RULE) {
+      return "<i>" + esc(PREFIX) + "</i><u>"
+           + esc(line.slice(PREFIX.length, -CLOSE.length)) + "</u><i>"
+           + esc(CLOSE) + "</i>";
+    }
+    return "<i>" + esc(PREFIX) + "</i>" + esc(line.slice(PREFIX.length));
+  }
 
-</body>
+  function render() {
+    var lines = build(), longest = 0;
+    lines.forEach(function (l) { if (l.length > longest) longest = l.length; });
 
-</html>
+    current = lines.join("\n");
+    code.innerHTML = lines.map(paint).join("\n");
+
+    var over = longest > WIDTH;
+    meta.textContent = over
+      ? "Längste Zeile " + longest + " Zeichen, also über Spalte " + WIDTH + "."
+      : lines.length + " Zeilen, bis Spalte " + WIDTH + ".";
+    meta.classList.toggle("over", over);
+
+    try { localStorage.setItem(KEY, text.value); } catch (e) {}
+  }
+
+  function fallbackCopy(txt) {
+    var ta = document.createElement("textarea");
+    ta.value = txt;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  var resetLabel = null;
+
+  function done(ok) {
+    copy.textContent = ok ? "Kopiert" : "Nicht kopiert";
+    live.textContent = ok
+      ? "Kommentarblock in die Zwischenablage kopiert."
+      : "Kopieren nicht möglich. Bitte den Block manuell markieren.";
+    if (ok) {
+      inner.classList.remove("copied");
+      void inner.offsetWidth;
+      inner.classList.add("copied");
+    }
+    clearTimeout(resetLabel);
+    resetLabel = setTimeout(function () {
+      copy.textContent = "Kopieren";
+      inner.classList.remove("copied");
+    }, 1600);
+  }
+
+  function doCopy() {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(current).then(function () { done(true); },
+        function () { done(fallbackCopy(current)); });
+    } else {
+      done(fallbackCopy(current));
+    }
+  }
+
+  text.addEventListener("input", render);
+  copy.addEventListener("click", doCopy);
+  code.addEventListener("click", doCopy);
+
+  document.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); doCopy(); }
+  });
+
+  theme.addEventListener("click", function () {
+    var root = document.documentElement;
+    var set = root.getAttribute("data-theme");
+    var dark = set ? set === "dark"
+      : !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    root.setAttribute("data-theme", dark ? "light" : "dark");
+    try { localStorage.setItem(KEY + "/theme", dark ? "light" : "dark"); } catch (e) {}
+  });
+
+  try {
+    var savedTheme = localStorage.getItem(KEY + "/theme");
+    if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+    var savedText = localStorage.getItem(KEY);
+    if (savedText !== null) text.value = savedText;
+  } catch (e) {}
+
+  render();
+})();
+</script>
+
+</body></html>
